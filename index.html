@@ -307,12 +307,14 @@ details p{white-space:pre-wrap;color:var(--muted);font-size:14.5px;line-height:1
         </div>
 
         <div class="finish-bar">
-          <button class="btn btn-primary" id="btnDownloadSheet">↓ Download my testimonial sheet (.txt)</button>
+          <button class="btn btn-primary" id="btnSubmit">➤ Send it to Coach Andre</button>
+          <button class="btn" id="btnDownloadSheet">↓ Download a copy (.txt)</button>
           <button class="btn" id="btnCopyText">⧉ Copy my words</button>
-          <a class="btn btn-clay" id="btnTextCoach" href="sms:4152151088">💬 Text Coach Andre</a>
-          <a class="btn" id="btnMailto" href="#">✉️ Email it instead</a>
+          <a class="btn" id="btnTextCoach" href="sms:4152151088">💬 Text instead</a>
+          <a class="btn" id="btnMailto" href="#">✉️ Email instead</a>
         </div>
-        <p class="small" style="margin-top:10px">How this works: your recording and sheet download to <em>your</em> device — then text them to Coach Andre at <a href="tel:4152151088">415-215-1088</a> (tap “Text Coach Andre” above to open Messages). That keeps you in control and avoids sending video to a random server.</p>
+        <div id="submitStatus" class="status" role="status" aria-live="polite" style="margin-top:12px"></div>
+        <p class="small" style="margin-top:10px">Tap <strong>Send it</strong> and your answers, photo, and recording go straight to Coach Andre — nothing to attach, nothing to text. If you'd rather keep it on your own phone, use Download / Text / Email instead. <span id="phoneInline"></span></p>
       </div>
     </div>
   </section>
@@ -403,6 +405,22 @@ details p{white-space:pre-wrap;color:var(--muted);font-size:14.5px;line-height:1
   // Recorder state
   var stream=null, recorder=null, chunks=[], recordedBlob=null, recordedKind='', recordSec=0, timerInt=null, uploadedClipBlob=null;
 
+  // ---- Config: the only place these values live ----
+  var COACH = {
+    name: 'Coach Andre',
+    phone: '4152151088',
+    displayPhone: '415-215-1088',
+    email: 'andreluiorozco@gmail.com',
+    endpoint: 'https://formspree.io/f/REPLACE_ME'
+  };
+  (function wirePhone(){
+    var tel='tel:'+COACH.phone, sms='sms:'+COACH.phone;
+    document.querySelectorAll('a[href^="tel:"]').forEach(function(a){ a.href=tel; });
+    document.querySelectorAll('a[href^="sms:4152151088"]').forEach(function(a){ a.href=sms; });
+    var pi=document.getElementById('phoneInline');
+    if(pi) pi.innerHTML='Prefer to talk? '+COACH.displayPhone+'.';
+  })();
+
   function startTimer(el, waveEl){
     recordSec=0; el.style.display='block'; el.textContent='00:00';
     if(waveEl) waveEl.classList.add('playing');
@@ -487,10 +505,67 @@ details p{white-space:pre-wrap;color:var(--muted);font-size:14.5px;line-height:1
     lines.push(''); lines.push('Date: '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}));
     return lines.join('\n');
   }
-  document.getElementById('btnDownloadSheet').addEventListener('click', function(){ downloadBlob(new Blob([testimonialText()],{type:'text/plain'}), fileBase()+'.txt'); showToast('Testimonial sheet downloaded — text it + your recording/photo to Coach Andre at 415-215-1088'); });
+  document.getElementById('btnDownloadSheet').addEventListener('click', function(){ downloadBlob(new Blob([testimonialText()],{type:'text/plain'}), fileBase()+'.txt'); showToast('Copy downloaded to your device'); });
   document.getElementById('btnCopyText').addEventListener('click', function(){ copyText(testimonialText(),'Your words copied — paste into a text or email'); });
-  function updateMailto(){ var body=encodeURIComponent(testimonialText()); document.getElementById('btnMailto').href='mailto:?subject='+encodeURIComponent('My testimonial for Coach Andre')+'&body='+body; var tc=document.getElementById('btnTextCoach'); if(tc) tc.href='sms:4152151088?&body='+body; }
+  function updateMailto(){ var body=encodeURIComponent(testimonialText()); document.getElementById('btnMailto').href='mailto:'+COACH.email+'?subject='+encodeURIComponent('My testimonial for '+COACH.name)+'&body='+body; var tc=document.getElementById('btnTextCoach'); if(tc) tc.href='sms:'+COACH.phone+'?&body='+body; }
   ['clientName','clientContext','q1','q2','extraLine'].forEach(function(id){ document.getElementById(id).addEventListener('input', updateMailto); }); updateMailto();
+
+  // ---- WRITE MODE marks recordedKind so the sheet is accurate ----
+  ['q1','q2','extraLine'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(){
+      if(!recordedBlob) recordedKind = (document.getElementById('q1').value.trim() || document.getElementById('q2').value.trim() || document.getElementById('extraLine').value.trim()) ? 'written' : '';
+    });
+  });
+
+  // ---- SUBMIT ----
+  var submitStatus=document.getElementById('submitStatus'), btnSubmit=document.getElementById('btnSubmit');
+  function setSubmit(msg,err){ submitStatus.textContent=msg||''; submitStatus.classList.toggle('error',!!err); }
+  function extFor(blob,kind){
+    var t=(blob&&blob.type)||'';
+    if(kind==='video'||kind==='upload') return t.indexOf('mp4')>-1 ? 'mp4' : (t.indexOf('quicktime')>-1 ? 'mov' : (t.indexOf('audio')===0 ? 'webm' : 'webm'));
+    return t.indexOf('mp4')>-1 ? 'm4a' : 'webm';
+  }
+  btnSubmit.addEventListener('click', function(){
+    var name=document.getElementById('clientName').value.trim();
+    var q1=document.getElementById('q1').value.trim(), q2=document.getElementById('q2').value.trim();
+    var hasWords = q1||q2||document.getElementById('extraLine').value.trim();
+    if(!name){ setSubmit('Add your name first (a first name and last initial is fine).',true); document.getElementById('clientName').focus(); return; }
+    if(!hasWords && !recordedBlob){ setSubmit('Nothing to send yet — record something, write your answers, or add a clip.',true); return; }
+    if(COACH.endpoint.indexOf('REPLACE_ME')>-1){ setSubmit('Sending is not switched on yet. Use Download, Text, or Email below for now.',true); return; }
+
+    var fd=new FormData();
+    fd.append('name', name);
+    fd.append('context', document.getElementById('clientContext').value.trim());
+    fd.append('permission', permValue);
+    fd.append('before', q1);
+    fd.append('now', q2);
+    fd.append('one_liner', document.getElementById('extraLine').value.trim());
+    fd.append('format', recordedKind || 'written');
+    fd.append('sheet', testimonialText());
+    fd.append('_subject', 'New testimonial from '+name+' — '+COACH.name);
+    if(recordedBlob){
+      try{ fd.append('recording', recordedBlob, fileBase()+'.'+extFor(recordedBlob, recordedKind)); }
+      catch(e){ setSubmit('That recording is too large to send this way — use Download, Text, or Email instead.',true); return; }
+    }
+    if(photoFile){ try{ fd.append('photo', photoFile, photoFile.name); }catch(e){} }
+
+    btnSubmit.disabled=true; setSubmit('Sending…');
+    fetch(COACH.endpoint, {method:'POST', body:fd, headers:{'Accept':'application/json'}})
+      .then(function(r){ return r.json().catch(function(){ return {ok:r.ok}; }); })
+      .then(function(j){
+        if(j && (j.ok || j.success === 'true' || j.success === true)){
+          document.querySelector('.card-pad').innerHTML='<div style="text-align:center;padding:34px 10px"><div style="font-size:40px">🎉</div><h3 style="font-family:Lora,serif;font-size:24px;margin:10px 0 6px">Sent — thank you.</h3><p class="small" style="max-width:44ch;margin:0 auto">'+COACH.name+' has your testimonial. Nothing else to do.</p></div>';
+          showToast('Sent to '+COACH.name);
+          return;
+        }
+        btnSubmit.disabled=false;
+        setSubmit('That didn\u2019t go through. Try Download / Text / Email instead, or call '+COACH.displayPhone+'.',true);
+      })
+      .catch(function(){
+        btnSubmit.disabled=false;
+        setSubmit('Network hiccup — try again, or use Download / Text / Email instead.',true);
+      });
+  });
 
   // OUTREACH BUILDER
   var coachEl=document.getElementById('coachName'), friendEl=document.getElementById('friendName'), linkEl=document.getElementById('pageLink');
