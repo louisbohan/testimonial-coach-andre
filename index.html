@@ -213,6 +213,7 @@ details p{white-space:pre-wrap;color:var(--muted);font-size:14.5px;line-height:1
         <div class="q-num">01</div>
         <h3>Your status before training with Andre</h3>
         <p>Pain, injury, low energy, nervous about lifting — whatever was true for you.</p>
+        <p style="margin-top:10px;opacity:.9"><strong>Already diagnosed by your doctor?</strong> Say what your doctor said — and what your training looked like after.</p>
         <span class="q-hint">Start with: “Before I started, I was…”</span>
       </article>
       <article class="q-card alt">
@@ -266,7 +267,7 @@ details p{white-space:pre-wrap;color:var(--muted);font-size:14.5px;line-height:1
         <!-- WRITE PANE -->
         <div class="pane" id="pane-write">
           <div class="grid2">
-            <div class="field"><label for="q1">1 — Your status before training with Andre?</label><textarea id="q1" placeholder="Before I started, I was…"></textarea></div>
+            <div class="field"><label for="q1">1 — Your status before training with Andre? <span>If a doctor diagnosed you, say what they said — and what training looked like after.</span></label><textarea id="q1" placeholder="Before I started, I was…"></textarea></div>
             <div class="field"><label for="q2">2 — What's different now?</label><textarea id="q2" placeholder="Now I can… / Now I feel…"></textarea></div>
           </div>
           <div class="field" style="margin-top:14px"><label for="extraLine">One line you'd tell a friend? <span>(optional — great for a quote on the website)</span></label><input type="text" id="extraLine" placeholder="e.g. I came for my back, I stayed because I finally felt strong again."></div>
@@ -283,11 +284,13 @@ details p{white-space:pre-wrap;color:var(--muted);font-size:14.5px;line-height:1
           <div>
             <p class="kicker" style="margin:0 0 8px">Can this be shared?</p>
             <div class="perm" id="permGroup">
-              <button class="perm-btn active" data-perm="Yes — use on website & social">✓ Yes, use it</button>
+              <button class="perm-btn active" data-perm="Yes — share with my name and my words as written">✓ Yes, share it</button>
+              <button class="perm-btn" data-perm="Yes — but quote without identifying details (first name + initial, no health details)">✓ Share, but keep health details out</button>
               <button class="perm-btn" data-perm="Ask me first before posting">Ask me first</button>
               <button class="perm-btn" data-perm="Private feedback only — do not post">Private only</button>
             </div>
             <p class="help">Nothing is posted automatically. You can ask for edits or removal anytime.</p>
+            <p class="help" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><strong>One request:</strong> your own health situation is yours to share — mention it if you'd like. Just credit any diagnosis to the doctor who made it, not to your coach. Andre trains people who've been diagnosed; he doesn't diagnose.</p>
           </div>
         </div>
 
@@ -360,7 +363,7 @@ details p{white-space:pre-wrap;color:var(--muted);font-size:14.5px;line-height:1
   });});
 
   // Permission pills
-  var permValue='Yes — use on website & social';
+  var permValue='Yes — share with my name and my words as written';
   document.querySelectorAll('#permGroup .perm-btn').forEach(function(b){ b.addEventListener('click',function(){
     document.querySelectorAll('#permGroup .perm-btn').forEach(function(x){x.classList.remove('active')}); b.classList.add('active'); permValue=b.getAttribute('data-perm');
   });});
