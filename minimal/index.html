@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light dark"/>
+<link rel="icon" href="data:,">
+<title>Share your story — Coach Andre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FCFAF7; --surface:#FFFFFF; --field:#F5F2EC;
+  --ink:#1B2420; --muted:#6A736C; --line:#E4DFD4;
+  --moss:#2F4A3E; --clay:#C25E3A;
+  --radius:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#121614; --surface:#1A201D; --field:#222A26; --ink:#EDE9E1; --muted:#A2ABA4; --line:#2C3630; --moss:#8FB09E; --clay:#E08A66; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",system-ui,-apple-system,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:660px;margin:0 auto;padding:0 22px}
+a{color:var(--moss)}
+img{max-width:100%;display:block}
+button,input,textarea{font:inherit;color:inherit}
+
+header{padding:44px 0 8px}
+.name{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:"Lora",Georgia,serif;font-weight:600;font-size:clamp(30px,5vw,42px);line-height:1.1;letter-spacing:-.02em;margin:14px 0 0}
+h1 em{font-style:italic;font-weight:500;color:var(--moss)}
+.sub{font-size:17px;color:var(--muted);margin:14px 0 0;max-width:48ch}
+
+.photo{border-radius:var(--radius);overflow:hidden;margin:26px 0 0;border:1px solid var(--line)}
+.photo img{width:100%;aspect-ratio:3/2;object-fit:cover}
+
+section{padding:34px 0 0}
+h2{font-family:"Lora",Georgia,serif;font-weight:600;font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
+.lede{color:var(--muted);font-size:15px;margin:0 0 18px}
+
+label{display:block;font-weight:600;font-size:14.5px;margin:16px 0 6px}
+label span{font-weight:400;color:var(--muted)}
+input[type=text],textarea{
+  width:100%;background:var(--field);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;font-size:16px;outline:none;
+}
+input[type=text]:focus,textarea:focus{border-color:var(--moss);box-shadow:0 0 0 3px rgba(47,74,62,.12)}
+textarea{min-height:92px;resize:vertical}
+
+.row{display:flex;gap:12px;margin-top:14px}
+.row>*{flex:1}
+
+.btn{
+  appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  padding:13px 18px;border-radius:10px;font-weight:600;font-size:15px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;
+}
+.btn:hover{filter:brightness(.98)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-main{background:var(--moss);border-color:var(--moss);color:#fff}
+@media (prefers-color-scheme:dark){.btn-main{background:#EDE9E1;border-color:#EDE9E1;color:#121614}}
+.btn-rec{background:var(--clay);border-color:var(--clay);color:#fff}
+.btn-wide{width:100%;margin-top:22px;padding:15px}
+
+.rec{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:18px;margin-top:6px}
+.rec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.rec-head strong{font-size:15px}
+.timer{font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;color:var(--clay)}
+audio{width:100%;margin-top:12px}
+.hint{font-size:14px;color:var(--muted);margin:10px 0 0}
+.hint a,.linkish{color:var(--moss);font-weight:600;text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;font-size:inherit}
+input[type=file]{display:none}
+
+.status{font-size:14px;margin:12px 0 0;min-height:1px;color:var(--muted)}
+.status.err{color:#B4462E}
+
+footer{padding:36px 0 56px;margin-top:34px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+footer p{margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="name">Coach Andre · San Francisco → Reno</p>
+    <h1>Share what <em>changed</em> for you.</h1>
+    <p class="sub">Two questions, 60–90 seconds. Audio or written — whatever's easier.</p>
+    <div class="photo"><img src="hero.jpg" alt="Training session" width="1920" height="1280"></div>
+  </header>
+
+  <section>
+    <h2>The two questions</h2>
+    <p class="lede">Talk like you'd tell a friend. Specific beats polished.</p>
+    <label>1 — Where were you before we started? <span>Your status, in your own words.</span></label>
+    <textarea id="q1" placeholder="Before I started, I was…"></textarea>
+    <label>2 — What's different now?</label>
+    <textarea id="q2" placeholder="Now I can…"></textarea>
+    <label for="extraLine">One line you'd tell a friend? <span>(optional)</span></label>
+    <input type="text" id="extraLine" placeholder="e.g. I came for my knee. I stayed for everything else.">
+  </section>
+
+  <section>
+    <h2>Your voice</h2>
+    <p class="lede">Record here, or upload a clip from your phone.</p>
+    <div class="rec">
+      <div class="rec-head">
+        <strong id="recLabel">Not recording</strong>
+        <span class="timer" id="timer" style="display:none">00:00</span>
+      </div>
+      <div class="row" style="margin-top:0">
+        <button class="btn btn-rec" id="btnRec">● Record</button>
+        <button class="btn" id="btnStop" disabled>■ Stop</button>
+      </div>
+      <audio id="playback" controls playsinline style="display:none"></audio>
+      <p class="hint">Already have one? <label for="uploadClip" class="linkish">Upload a clip</label><input type="file" id="uploadClip" accept="audio/*,video/*"> <span id="clipName" style="color:var(--muted)"></span></p>
+      <p class="status" id="recStatus"></p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Who you are</h2>
+    <label for="clientName">Name to show</label>
+    <input type="text" id="clientName" placeholder="e.g. Maria G.">
+    <label for="clientContext">Context <span>(optional)</span></label>
+    <input type="text" id="clientContext" placeholder="e.g. Trained 4 years · 62">
+    <label for="photoInput">Training photo <span>(optional)</span></label>
+    <div class="row">
+      <button class="btn" id="btnPhoto">Add a photo</button>
+      <button class="btn" id="btnRemovePhoto" disabled>Remove photo</button>
+    </div>
+    <input type="file" id="photoInput" accept="image/*">
+    <p class="hint" id="photoName"></p>
+  </section>
+
+  <section>
+    <button class="btn btn-main btn-wide" id="btnSubmit">Send it to Coach Andre</button>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="btnCopy">Copy my words</button>
+      <a class="btn" id="btnText">Text instead</a>
+    </div>
+    <p class="status" id="submitStatus" role="status" aria-live="polite"></p>
+  </section>
+
+  <footer>
+    <p><strong>Thank you.</strong> Nothing gets posted without you saying yes — just reply and ask.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var COACH = { phone:'4152151088', displayPhone:'415-215-1088', email:'andreluiorozco@gmail.com', endpoint:'https://formspree.io/xjyylrzn' };
+  var textBtn = document.getElementById('btnText'); textBtn.href = 'sms:' + COACH.phone;
+  var permValue = 'Ask me first before posting'; // safe default; nothing is auto-published
+
+  function $(id){ return document.getElementById(id); }
+  function setStatus(id, msg, err){ var el=$(id); el.textContent = msg || ''; el.classList.toggle('err', !!err); }
+  function fmt(s){ var m=Math.floor(s/60), ss=s%60; return (m<10?'0':'')+m+':'+(ss<10?'0':'')+ss; }
+
+  // ---- Recorder ----
+  var stream=null, recorder=null, chunks=[], blob=null, kind='', sec=0, tick=null, uploaded=null;
+
+  $('btnRec').addEventListener('click', async function(){
+    try{
+      if(recorder && recorder.state !== 'inactive') recorder.stop();
+      if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
+      stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    }catch(e){
+      setStatus('recStatus','Microphone blocked. Check your browser permission, or upload a clip.',true); return;
+    }
+    chunks=[]; kind='audio'; blob=null;
+    try{ recorder = new MediaRecorder(stream); }catch(e){ setStatus('recStatus','Recording not supported here — upload a clip instead.',true); return; }
+    recorder.ondataavailable = function(e){ if(e.data.size) chunks.push(e.data); };
+    recorder.onstop = function(){
+      blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+      var pb = $('playback'); pb.src = URL.createObjectURL(blob); pb.style.display='block';
+      setStatus('recStatus','Recording ready. Preview above, then send.');
+      $('recLabel').textContent='Recorded';
+      clearInterval(tick); $('timer').style.display='none';
+    };
+    recorder.start(250);
+    $('btnRec').textContent = '● Re-record';
+    $('btnStop').disabled = false;
+    $('recLabel').textContent = 'Recording…';
+    $('timer').style.display = 'inline';
+    sec = 0; $('timer').textContent = fmt(0);
+    clearInterval(tick);
+    tick = setInterval(function(){
+      sec++; $('timer').textContent = fmt(sec);
+      if(sec >= 300){ $('btnStop').click(); }
+    }, 1000);
+  });
+
+  $('btnStop').addEventListener('click', function(){
+    if(recorder && recorder.state !== 'inactive') recorder.stop();
+    $('btnStop').disabled = true;
+    if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  });
+
+  $('uploadClip').addEventListener('change', function(e){
+    var f = e.target.files[0]; if(!f) return;
+    uploaded = f; blob = f; kind = 'upload';
+    var pb = $('playback'); pb.src = URL.createObjectURL(f); pb.style.display='block';
+    $('clipName').textContent = '— ' + f.name;
+    setStatus('recStatus','Clip attached. Preview above, then send.');
+  });
+
+  // ---- Photo ----
+  var photo = null;
+  $('btnPhoto').addEventListener('click', function(){ $('photoInput').click(); });
+  $('photoInput').addEventListener('change', function(e){
+    var f = e.target.files[0]; if(!f) return;
+    photo = f;
+    $('photoName').textContent = f.name;
+    $('btnRemovePhoto').disabled = false;
+  });
+  $('btnRemovePhoto').addEventListener('click', function(){
+    photo = null; $('photoInput').value=''; $('photoName').textContent=''; $('btnRemovePhoto').disabled = true;
+  });
+
+  // ---- Compose ----
+  function testimonialText(){
+    var name = $('clientName').value.trim() || '(no name given)';
+    var ctx  = $('clientContext').value.trim();
+    var q1 = $('q1').value.trim(), q2 = $('q2').value.trim(), extra = $('extraLine').value.trim();
+    var lines = ['TESTIMONIAL','Name: '+name];
+    if(ctx) lines.push('Context: '+ctx);
+    lines.push('Consent: '+permValue);
+    lines.push('Format: '+(kind || 'written'));
+    if(photo) lines.push('Photo: '+photo.name);
+    lines.push('', '1) Before training:', q1 || '(in recording)', '', '2) What\u2019s different now:', q2 || '(in recording)');
+    if(extra) lines.push('', 'One liner: '+extra);
+    lines.push('', 'Date: '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}));
+    return lines.join('\n');
+  }
+
+  function toast(msg){
+    setStatus('submitStatus', msg);
+    setTimeout(function(){ setStatus('submitStatus',''); }, 4000);
+  }
+
+  $('btnCopy').addEventListener('click', function(){
+    var t = testimonialText();
+    function done(){ toast('Copied — paste into a text or email.'); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(done).catch(function(){ fallback(); });
+    } else fallback();
+    function fallback(){
+      var ta = document.createElement('textarea'); ta.value = t; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); done(); }catch(e){ toast('Copy failed — select the text and copy manually.', true); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  $('btnSubmit').addEventListener('click', function(){
+    var btn = this;
+    var data = new FormData();
+    data.append('name', $('clientName').value.trim());
+    data.append('context', $('clientContext').value.trim());
+    data.append('q1', $('q1').value.trim());
+    data.append('q2', $('q2').value.trim());
+    data.append('oneLiner', $('extraLine').value.trim());
+    data.append('consent', permValue);
+    data.append('format', kind || 'written');
+    data.append('summary', testimonialText());
+    if(blob) data.append('recording', blob, 'testimonial'+(kind==='upload' && uploaded ? '-'+uploaded.name : '.webm'));
+    if(photo) data.append('photo', photo, photo.name);
+
+    if(!data.get('name')){ setStatus('submitStatus','Add a name first.', true); return; }
+    if(!data.get('q1') && !data.get('q2') && !blob){ setStatus('submitStatus','Answer a question or record a clip first.', true); return; }
+
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch(COACH.endpoint, { method:'POST', body:data, headers:{ 'Accept':'application/json' } })
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json().catch(function(){ return {}; }); })
+      .then(function(){
+        btn.textContent = 'Sent ✓';
+        setStatus('submitStatus','Thank you. Andre has it.');
+      })
+      .catch(function(err){
+        btn.disabled = false; btn.textContent = 'Send it to Coach Andre';
+        setStatus('submitStatus','Send failed ('+err.message+'). Try “Copy my words” or “Text instead”.', true);
+      });
+  });
+})();
+</script>
+</body>
+</html>
