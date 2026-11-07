@@ -149,7 +149,7 @@ footer p{margin:6px 0 0}
 
 <script>
 (function(){
-  var COACH = { phone:'4152151088', displayPhone:'415-215-1088', email:'andreluiorozco@gmail.com', endpoint:'https://formspree.io/xjyylrzn' };
+  var COACH = { phone:'4152151088', displayPhone:'415-215-1088', email:'andreluiorozco@gmail.com', endpoint:'https://formspree.io/f/xjyylrzn' };
   var textBtn = document.getElementById('btnText'); textBtn.href = 'sms:' + COACH.phone;
   var permValue = 'Ask me first before posting'; // safe default; nothing is auto-published
 
@@ -264,24 +264,46 @@ footer p{margin:6px 0 0}
     data.append('consent', permValue);
     data.append('format', kind || 'written');
     data.append('summary', testimonialText());
-    if(blob) data.append('recording', blob, 'testimonial'+(kind==='upload' && uploaded ? '-'+uploaded.name : '.webm'));
-    if(photo) data.append('photo', photo, photo.name);
+    // Formspree free tier rejects file uploads (HTTP 400) - never send blobs.
+    // Recording + photo are saved to the client's device instead.
+    if(blob) data.append('recording', 'saved-to-device');
+    if(photo) data.append('photo', photo.name);
 
     if(!data.get('name')){ setStatus('submitStatus','Add a name first.', true); return; }
     if(!data.get('q1') && !data.get('q2') && !blob){ setStatus('submitStatus','Answer a question or record a clip first.', true); return; }
+
+    // Save media locally before handing off the text.
+    if(blob) downloadBlob(blob, fileBase() + '-' + (kind === 'upload' && uploaded ? uploaded.name : 'recording.webm'));
+    if(photo) downloadBlob(photo, fileBase() + '-' + photo.name);
 
     btn.disabled = true; btn.textContent = 'Sending…';
     fetch(COACH.endpoint, { method:'POST', body:data, headers:{ 'Accept':'application/json' } })
       .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json().catch(function(){ return {}; }); })
       .then(function(){
         btn.textContent = 'Sent ✓';
-        setStatus('submitStatus','Thank you. Andre has it.');
+        setStatus('submitStatus', (blob || photo)
+          ? 'Thank you. Andre has your words. Your ' + (blob && photo ? 'recording and photo' : (blob ? 'recording' : 'photo')) + ' just saved to your device - text it to 415-215-1088 to send it along.'
+          : 'Thank you. Andre has it.');
       })
       .catch(function(err){
         btn.disabled = false; btn.textContent = 'Send it to Coach Andre';
         setStatus('submitStatus','Send failed ('+err.message+'). Try “Copy my words” or “Text instead”.', true);
       });
   });
+
+  function fileBase(){
+    var n = ($('clientName').value || 'testimonial').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'testimonial';
+    return n + '-' + new Date().toISOString().slice(0,10);
+  }
+  function downloadBlob(b, name){
+    try{
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); if(a.parentNode) a.parentNode.removeChild(a); }, 1500);
+    }catch(e){}
+  }
 })();
 </script>
 </body>
