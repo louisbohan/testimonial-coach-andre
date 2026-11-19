@@ -1,0 +1,12 @@
+name = "testimonial-upload"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# Free-tier storage: KV (25 MiB per value, 1k writes/day, 100k reads/day).
+# Swap to R2 later by adding an r2_buckets binding and changing put/get.
+[[kv_namespaces]]
+binding = "testimonial_media"
+id = "9943cf4bc8bd47559a13f22d91e03f5a"
+
+[observability]
+enabled = true
