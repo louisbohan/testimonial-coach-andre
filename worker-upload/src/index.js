@@ -48,6 +48,8 @@ function extFor(type, name) {
     "image/gif": ".gif",
     "audio/webm": ".webm",
     "audio/mp4": ".m4a",
+    "audio/m4a": ".m4a",
+    "audio/aac": ".m4a",
     "audio/mpeg": ".mp3",
     "audio/wav": ".wav",
     "audio/x-wav": ".wav",
@@ -56,9 +58,33 @@ function extFor(type, name) {
     "video/quicktime": ".mov",
     "video/webm": ".webm",
   };
+  // MIME wins over the filename: Safari records audio/mp4 even when the page
+  // hands us a "recording.webm" filename, and a wrong extension makes iOS
+  // refuse to play the file.
   if (byType[type]) return byType[type];
   const m = /\.([a-z0-9]{2,5})$/i.exec(name || "");
   return m ? "." + m[1].toLowerCase() : ".bin";
+}
+
+/** Strip codec parameters: "audio/mp4;codecs=mp4a.40.2" -> "audio/mp4". */
+function normalizeType(t) {
+  return (t || "").split(";")[0].trim().toLowerCase();
+}
+
+const TYPE_EXT = {
+  "image/jpeg": ".jpg", "image/png": ".png", "image/heic": ".heic", "image/webp": ".webp",
+  "image/gif": ".gif", "audio/webm": ".webm", "audio/mp4": ".m4a", "audio/m4a": ".m4a",
+  "audio/aac": ".m4a", "audio/mpeg": ".mp3", "audio/wav": ".wav", "audio/x-wav": ".wav",
+  "audio/ogg": ".ogg", "video/mp4": ".mp4", "video/quicktime": ".mov", "video/webm": ".webm",
+};
+
+/** Repair a filename whose extension disagrees with its real content type. */
+function fixFilename(name, type) {
+  const want = TYPE_EXT[type];
+  if (!want) return name;
+  const cur = (/\.([a-z0-9]{2,5})$/i.exec(name || "") || [])[1];
+  if (cur && ("." + cur.toLowerCase()) === want) return name;
+  return (name || "upload").replace(/\.[a-z0-9]{2,5}$/i, "") + want;
 }
 
 async function handleUpload(request, env, cors) {
@@ -79,7 +105,7 @@ async function handleUpload(request, env, cors) {
     return json({ ok: false, error: "No file field." }, cors, 400);
   }
 
-  const type = file.type || "application/octet-stream";
+  const type = normalizeType(file.type) || "application/octet-stream";
   if (!ALLOWED.test(type)) {
     return json({ ok: false, error: `Unsupported type: ${type}` }, cors, 415);
   }
@@ -99,7 +125,7 @@ async function handleUpload(request, env, cors) {
   await env.testimonial_media.put(key, buf, {
     metadata: {
       contentType: type,
-      filename: (file.name || "upload").slice(0, 200),
+      filename: fixFilename(file.name || "upload", type).slice(0, 200),
       bytes: buf.byteLength,
       received: new Date().toISOString(),
     },
@@ -125,11 +151,15 @@ async function handleServe(url, env, cors) {
   const { value, metadata } = await env.testimonial_media.getWithMetadata(key, "arrayBuffer");
   if (!value) return json({ ok: false, error: "not found" }, cors, 404);
 
+  const ct = normalizeType((metadata && metadata.contentType) || "application/octet-stream");
+  // Repair the name at serve time too, so files stored before this fix
+  // (e.g. AAC audio saved as .webm) still open on iOS.
+  const name = fixFilename((metadata && metadata.filename) || key, ct).replace(/"/g, "");
+
   return new Response(value, {
     headers: {
-      "Content-Type": (metadata && metadata.contentType) || "application/octet-stream",
-      "Content-Disposition":
-        'inline; filename="' + ((metadata && metadata.filename) || key).replace(/"/g, "") + '"',
+      "Content-Type": ct,
+      "Content-Disposition": 'inline; filename="' + name + '"',
       "Cache-Control": "private, max-age=86400",
       ...cors,
     },

@@ -263,6 +263,17 @@ footer p{margin:6px 0 0}
       }); });
   }
 
+  function extFromType(t){
+    t = (t || '').toLowerCase();
+    if(t.indexOf('mp4') >= 0 || t.indexOf('aac') >= 0 || t.indexOf('m4a') >= 0) return '.m4a';
+    if(t.indexOf('webm') >= 0) return '.webm';
+    if(t.indexOf('mpeg') >= 0 || t.indexOf('mp3') >= 0) return '.mp3';
+    if(t.indexOf('wav') >= 0) return '.wav';
+    if(t.indexOf('quicktime') >= 0) return '.mov';
+    if(t.indexOf('ogg') >= 0) return '.ogg';
+    return '.m4a';
+  }
+
   $('btnSubmit').addEventListener('click', function(){
     var btn = this;
     var data = new FormData();
@@ -284,8 +295,8 @@ footer p{margin:6px 0 0}
     // 1) push media to the upload worker, 2) hand the links to Formspree.
     var mediaUrl = {};
     var uploads = [];
-    if(blob) uploads.push(uploadOne(blob, 'recording' + (kind === 'upload' && uploaded ? '-' + uploaded.name : '.webm')).then(function(u){ mediaUrl.recording = u; }));
-    if(photo) uploads.push(uploadOne(photo).then(function(u){ mediaUrl.photo = u; }));
+    if(blob) uploads.push(uploadOne(blob, fileBase() + '-recording' + extFromType(blob.type)).then(function(u){ mediaUrl.recording = u; }));
+    if(photo) uploads.push(uploadOne(photo, fileBase() + '-photo' + extFromType(photo.type)).then(function(u){ mediaUrl.photo = u; }));
 
     Promise.allSettled(uploads)
       .then(function(results){
