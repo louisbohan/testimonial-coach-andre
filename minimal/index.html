@@ -274,6 +274,38 @@ footer p{margin:6px 0 0}
     return '.m4a';
   }
 
+  // iOS cannot play WebM. When the microphone produced WebM (Chrome, Android,
+  // desktop Safari fallbacks), transcode to 16 kHz mono WAV so the file opens
+  // on any phone. Safari already records AAC/mp4, which needs no work.
+  function wavFromBuffer(ab){
+    var data = ab.getChannelData(0), len = data.length;
+    var buf = new ArrayBuffer(44 + len*2), v = new DataView(buf);
+    function str(o,s){ for(var i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); }
+    str(0,'RIFF'); v.setUint32(4, 36+len*2, true); str(8,'WAVE'); str(12,'fmt ');
+    v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24, ab.sampleRate, true); v.setUint32(28, ab.sampleRate*2, true);
+    v.setUint16(32,2,true); v.setUint16(34,16,true); str(36,'data'); v.setUint32(40, len*2, true);
+    var o = 44;
+    for(var i=0;i<len;i++){ var s = Math.max(-1, Math.min(1, data[i])); v.setInt16(o, s<0 ? s*0x8000 : s*0x7fff, true); o += 2; }
+    return new Blob([buf], { type:'audio/wav' });
+  }
+
+  async function toPlayableAudio(b){
+    if(!b || (b.type||'').toLowerCase().indexOf('webm') < 0) return b;
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx || !window.OfflineAudioContext) return b;
+    try{
+      var ctx = new Ctx();
+      var decoded = await ctx.decodeAudioData(await b.arrayBuffer());
+      var rate = 16000;
+      var off = new OfflineAudioContext(1, Math.ceil(decoded.duration*rate) || 1, rate);
+      var src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
+      var rendered = await off.startRendering();
+      if(ctx.close) ctx.close();
+      return wavFromBuffer(rendered);
+    }catch(e){ return b; }
+  }
+
   $('btnSubmit').addEventListener('click', function(){
     var btn = this;
     var data = new FormData();
@@ -295,7 +327,11 @@ footer p{margin:6px 0 0}
     // 1) push media to the upload worker, 2) hand the links to Formspree.
     var mediaUrl = {};
     var uploads = [];
-    if(blob) uploads.push(uploadOne(blob, fileBase() + '-recording' + extFromType(blob.type)).then(function(u){ mediaUrl.recording = u; }));
+    if(blob) uploads.push(
+      (kind === 'audio' ? toPlayableAudio(blob) : Promise.resolve(blob))
+        .then(function(b){ return uploadOne(b, fileBase() + '-recording' + extFromType(b.type)); })
+        .then(function(u){ mediaUrl.recording = u; })
+    );
     if(photo) uploads.push(uploadOne(photo, fileBase() + '-photo' + extFromType(photo.type)).then(function(u){ mediaUrl.photo = u; }));
 
     Promise.allSettled(uploads)
